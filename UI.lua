@@ -1,356 +1,300 @@
+--[=[
+ d888b  db    db d888888b      .d888b.      db      db    db  .d8b.  
+88' Y8b 88    88   `88'        VP  `8D      88      88    88 d8' `8b 
+88      88    88    88            odD'      88      88    88 88ooo88 
+88  ooo 88    88    88          .88'        88      88    88 88~~~88 
+88. ~8~ 88b  d88   .88.        j88.         88booo. 88b  d88 88   88    @uniquadev
+ Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER 
 
-repeat
-    task.wait()
-until game:IsLoaded()
-local library = {}
+designed using localmaze gui creator
+]=]
 
-local ToggleUI = false
-library.currentTab = nil
-library.flags = {}
+local CollectionService = game:GetService("CollectionService");
+local G2L = {};
 
-local services =
-    setmetatable(
-    {},
-    {
-        __index = function(t, k)
-            return game.GetService(game, k)
-        end
-    }
-)
+G2L["ScreenGui_1"] = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"));
+G2L["ScreenGui_1"]["IgnoreGuiInset"] = true;
+G2L["ScreenGui_1"]["Enabled"] = false;
+G2L["ScreenGui_1"]["ScreenInsets"] = Enum.ScreenInsets.DeviceSafeInsets;
+G2L["ScreenGui_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
 
-local mouse = services.Players.LocalPlayer:GetMouse()
+CollectionService:AddTag(G2L["ScreenGui_1"], [[main]]);
 
-local function createTween(obj, duration, easingStyle, easingDirection, properties)
-    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle[easingStyle], Enum.EasingDirection[easingDirection])
-    local tween = services.TweenService:Create(obj, tweenInfo, properties)
-    tween:Play()
-    return tween
-end
+G2L["main_2"] = Instance.new("Frame", G2L["ScreenGui_1"]);
+G2L["main_2"]["BorderSizePixel"] = 0;
+G2L["main_2"]["BackgroundColor3"] = Color3.fromRGB(197, 197, 197);
+G2L["main_2"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+G2L["main_2"]["Size"] = UDim2.new(0.46053, 0, 0.6705, 0);
+G2L["main_2"]["Position"] = UDim2.new(0.5, 0, 0.5, 0);
+G2L["main_2"]["Name"] = [[main]];
+G2L["main_2"]["BackgroundTransparency"] = 0.65;
 
-function Tween(obj, t, data)
-    return createTween(obj, t[1], t[2], t[3], data)
-end
+G2L["UIDRAG"] = Instance.new("UIDragDetector", G2L["main_2"]);
 
-local function createRipple(obj)
-    if obj.ClipsDescendants ~= true then
-        obj.ClipsDescendants = true
-    end
-    local Ripple = Instance.new("ImageLabel")
-    Ripple.Name = "Ripple"
-    Ripple.Parent = obj
-    Ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Ripple.BackgroundTransparency = 1.000
-    Ripple.ZIndex = 8
-    Ripple.Image = "rbxassetid://2708891598"
-    Ripple.ImageTransparency = 0.800
-    Ripple.ScaleType = Enum.ScaleType.Fit
-    Ripple.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    Ripple.Position = UDim2.new((mouse.X - Ripple.AbsolutePosition.X) / obj.AbsoluteSize.X, 0, (mouse.Y - Ripple.AbsolutePosition.Y) / obj.AbsoluteSize.Y, 0)
-    return Ripple
-end
-
-function Ripple(obj)
-    spawn(function()
-        local ripple = createRipple(obj)
-        Tween(ripple, {.3, "Linear", "InOut"}, {Position = UDim2.new(-5.5, 0, -5.5, 0), Size = UDim2.new(12, 0, 12, 0)})
-        Tween(obj, {0.1, "Sine", "InOut"}, {Size = UDim2.new(1.1, 0, 1.1, 0)})
-        wait(0.15)
-        Tween(ripple, {.3, "Linear", "InOut"}, {ImageTransparency = 1})
-        Tween(obj, {0.1, "Sine", "InOut"}, {Size = UDim2.new(1, 0, 1, 0)})
-        wait(.3)
-        ripple:Destroy()
-    end)
-end
-
-local toggled = false
-
-local switchingTabs = false
-local function tweenTabElement(element, transparency)
-    services.TweenService:Create(element, TweenInfo.new(0.1), {ImageTransparency = transparency}):Play()
-    services.TweenService:Create(element.TabText, TweenInfo.new(0.1), {TextTransparency = transparency}):Play()
-end
-
-function switchTab(new)
-
-local ripple = Instance.new("Frame")
-ripple.Parent = new[1]
-ripple.BackgroundColor3 = Color3.fromHSV(tick()%5/5, 1, 1)
-ripple.BackgroundTransparency = 0.7
-ripple.Size = UDim2.new(0, 0, 0, 0)
-ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
-ripple.AnchorPoint = Vector2.new(0.5, 0.5)
-ripple.ZIndex = 10
-
-game:GetService("TweenService"):Create(
-    ripple,
-    TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-    {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0.5, 0, 0.5, 0)
-    }
-):Play()
-
-spawn(function()
-    wait(0.5)
-    ripple:Destroy()
-end)
-    if switchingTabs then
-        return
-    end
-    local old = library.currentTab
-    if old == nil then
-        new[2].Visible = true
-        library.currentTab = new
-        tweenTabElement(new[1], 0)
-        return
-    end
-
-    if old[1] == new[1] then
-        return
-    end
-    switchingTabs = true
-    library.currentTab = new
-
-    tweenTabElement(old[1], 0.2)
-    tweenTabElement(new[1], 0)
-
-    old[2].Visible = false
-    new[2].Visible = true
-
-    task.wait(0.1)
-    switchingTabs = false
-end
-
-function drag(frame, hold)
-    if not hold then
-        hold = frame
-    end
-    local dragging
-    local dragInput
-    local dragStart
-    local startPos
-
-    local function update(input)
-    
-        local delta = input.Position - dragStart
-        frame.Position =
-            UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-
-    hold.InputBegan:Connect(
-        function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                dragStart = input.Position
-                startPos = frame.Position
-
-                input.Changed:Connect(
-                    function()
-                        if input.UserInputState == Enum.UserInputState.End then
-                            dragging = false
-                        end
-                    end
-                )
-            end
-        end
-    )
-
-    frame.InputChanged:Connect(
-        function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
-                dragInput = input
-            end
-        end
-    )
-
-    services.UserInputService.InputChanged:Connect(
-        function(input)
-            if input == dragInput and dragging then
-                update(input)
-            end
-        end
-    )
-end
-
-function library.new(library, name, theme)
-
-    for _, v in next, services.CoreGui:GetChildren() do
-        if v.Name == "Linni" then
-            v:Destroy()
-        end
-    end
-    
-MainXEColor = Color3.fromRGB(20, 20, 30)  
-Background = Color3.fromRGB(40, 40, 60)  
-zyColor = Color3.fromRGB(30, 30, 45)      
-beijingColor = Color3.fromRGB(50, 50, 70) 
-
-    
-    local dogent = Instance.new("ScreenGui")
-    
-    
-    local TabMainXE = Instance.new("Frame")
-    local MainXEC = Instance.new("UICorner")
-    local SB = Instance.new("Frame")
-    local SBC = Instance.new("UICorner")
-    local Side = Instance.new("Frame")
-    local SideG = Instance.new("UIGradient")
-    local TabBtns = Instance.new("ScrollingFrame")
-    local TabBtnsL = Instance.new("UIListLayout")
-    local ScriptTitle = Instance.new("TextLabel")
-    local SBG = Instance.new("UIGradient")
-    local Open = Instance.new("TextButton")
-    local UIG = Instance.new("UIGradient")
-    local DropShadowHolder = Instance.new("Frame")
-    local DropShadow = Instance.new("ImageLabel")
-    local UICornerMainXE = Instance.new("UICorner")
-    local UIGradient = Instance.new("UIGradient")
-    local UIGradientTitle = Instance.new("UIGradient")
-    
-    local WelcomeLabel = Instance.new("TextLabel")
-    
-    
-    
-    if syn and syn.protect_gui then
-        syn.protect_gui(dogent)
-    end
-
-    dogent.Name = "Linni"
-    dogent.Parent = services.CoreGui
-
-    function UiDestroy()
-        dogent:Destroy()
-    end   
-    
+G2L["UICorner_3"] = Instance.new("UICorner", G2L["main_2"]);
+G2L["UICorner_3"]["CornerRadius"] = UDim.new(0.05, 0);
 
 
-    
-    
-    function ToggleUILib()
-        if not ToggleUI then
-            dogent.Enabled = false
-            ToggleUI = true
-        else
-            ToggleUI = false
-            dogent.Enabled = true
-        end
-    end
-    local Language = {
-       
-        ["zh-cn"] = {
-            WelcomeUI = "欢迎使用霖溺脚本",
-            OpenUI = "打开UI",
-            HideUI = "隐藏UI",
-            Currently = "当前："
-        }
-    }
-    local Players = game:GetService("Players")
-    local XA = Players.LocalPlayer
-    local userRegion = game:GetService("LocalizationService"):GetCountryRegionForPlayerAsync(XA)
+G2L["Frame_4"] = Instance.new("Frame", G2L["main_2"]);
+G2L["Frame_4"]["BorderSizePixel"] = 0;
+G2L["Frame_4"]["BackgroundColor3"] = Color3.fromRGB(197, 197, 197);
+G2L["Frame_4"]["Size"] = UDim2.new(0.94857, 0, 0.928, 0);
+G2L["Frame_4"]["Position"] = UDim2.new(0.02857, 0, 0.04143, 0);
+G2L["Frame_4"]["BackgroundTransparency"] = 0.5;
 
-    local regionToLanguage = {
-        ["CN"] = "zh-cn", 
-    }
+
+G2L["tab_5"] = Instance.new("Frame", G2L["Frame_4"]);
+G2L["tab_5"]["BorderSizePixel"] = 0;
+G2L["tab_5"]["BackgroundColor3"] = Color3.fromRGB(169, 169, 169);
+G2L["tab_5"]["Size"] = UDim2.new(0.14458, 0, 0.75, 0);
+G2L["tab_5"]["Position"] = UDim2.new(0.03614, 0, 0.1875, 0);
+G2L["tab_5"]["Name"] = [[tab]];
+G2L["tab_5"]["BackgroundTransparency"] = 0.3;
+
+
+G2L["UICorner_6"] = Instance.new("UICorner", G2L["tab_5"]);
+G2L["UICorner_6"]["CornerRadius"] = UDim.new(0.1, 0);
+
+
+G2L["UICorner_7"] = Instance.new("UICorner", G2L["Frame_4"]);
+G2L["UICorner_7"]["CornerRadius"] = UDim.new(0.05, 0);
+
+
+G2L["page_8"] = Instance.new("Frame", G2L["Frame_4"]);
+G2L["page_8"]["BorderSizePixel"] = 0;
+G2L["page_8"]["BackgroundColor3"] = Color3.fromRGB(169, 169, 169);
+G2L["page_8"]["Size"] = UDim2.new(0.76506, 0, 0.75, 0);
+G2L["page_8"]["Position"] = UDim2.new(0.20482, 0, 0.1875, 0);
+G2L["page_8"]["Name"] = [[page]];
+G2L["page_8"]["BackgroundTransparency"] = 0.3;
+
+
+G2L["UICorner_9"] = Instance.new("UICorner", G2L["page_8"]);
+G2L["UICorner_9"]["CornerRadius"] = UDim.new(0.05, 0);
+
+
+G2L["ScrollingFrame_a"] = Instance.new("ScrollingFrame", G2L["page_8"]);
+G2L["ScrollingFrame_a"]["ScrollingDirection"] = Enum.ScrollingDirection.Y;
+G2L["ScrollingFrame_a"]["BorderSizePixel"] = 0;
+G2L["ScrollingFrame_a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["ScrollingFrame_a"]["AutomaticCanvasSize"] = Enum.AutomaticSize.Y;
+G2L["ScrollingFrame_a"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["ScrollingFrame_a"]["Position"] = UDim2.new(0.01575, 0, 0.02381, 0);
+G2L["ScrollingFrame_a"]["ScrollBarThickness"] = 0;
+G2L["ScrollingFrame_a"]["BackgroundTransparency"] = 1;
+
+
+G2L["UIListLayout_b"] = Instance.new("UIListLayout", G2L["ScrollingFrame_a"]);
+G2L["UIListLayout_b"]["Padding"] = UDim.new(0.03, 0);
+
+
+G2L["bar_c"] = Instance.new("Frame", G2L["Frame_4"]);
+G2L["bar_c"]["BorderSizePixel"] = 0;
+G2L["bar_c"]["BackgroundColor3"] = Color3.fromRGB(169, 169, 169);
+G2L["bar_c"]["Size"] = UDim2.new(0.93976, 0, 0.11607, 0);
+G2L["bar_c"]["Position"] = UDim2.new(0.03614, 0, 0.03571, 0);
+G2L["bar_c"]["Name"] = [[bar]];
+G2L["bar_c"]["BackgroundTransparency"] = 0.3;
+
+
+G2L["close_d"] = Instance.new("TextButton", G2L["bar_c"]);
+G2L["close_d"]["TextWrapped"] = true;
+G2L["close_d"]["BorderSizePixel"] = 0;
+G2L["close_d"]["TextStrokeColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["close_d"]["TextScaled"] = true;
+G2L["close_d"]["TextColor3"] = Color3.fromRGB(255, 0, 0);
+G2L["close_d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["close_d"]["BackgroundTransparency"] = 1;
+G2L["close_d"]["Size"] = UDim2.new(0.09615, 0, 1.15385, 0);
+G2L["close_d"]["Text"] = [[x]];
+G2L["close_d"]["Name"] = [[close]];
+G2L["close_d"]["Position"] = UDim2.new(0.90385, 0, -0.07692, 0);
+
+
+G2L["UICorner_e"] = Instance.new("UICorner", G2L["bar_c"]);
+G2L["UICorner_e"]["CornerRadius"] = UDim.new(0.2, 0);
+
+
+G2L["title _f"] = Instance.new("TextLabel", G2L["bar_c"]);
+G2L["title _f"]["TextWrapped"] = true;
+G2L["title _f"]["BorderSizePixel"] = 0;
+G2L["title _f"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["title _f"]["TextScaled"] = true;
+G2L["title _f"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["title _f"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["title _f"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["title _f"]["BackgroundTransparency"] = 1;
+G2L["title _f"]["Size"] = UDim2.new(0.54487, 0, 0.69231, 0);
+G2L["title _f"]["Text"] = [[example]];
+G2L["title _f"]["AutomaticSize"] = Enum.AutomaticSize.X;
+G2L["title _f"]["Name"] = [[title]];
+G2L["title _f"]["Position"] = UDim2.new(0.01923, 0, 0.07692, 0);
+
+
+G2L["UIAspectRatioConstraint_10"] = Instance.new("UIAspectRatioConstraint", G2L["main_2"]);
+G2L["UIAspectRatioConstraint_10"]["AspectRatio"] = 1.45;
+
+
+G2L["LocalScript_11"] = Instance.new("LocalScript", G2L["ScreenGui_1"]);
 
 
 
-
-    local currentLanguage = Language[regionToLanguage[userRegion]] and regionToLanguage[userRegion] or "zh-cn"
-
-local function createFrame(name, parent, anchorPoint, position, size, backgroundColor, zIndex, draggable)
-    local frame = Instance.new("Frame")
-    frame.Name = name
-    frame.Parent = parent
-    frame.AnchorPoint = anchorPoint
-    frame.Position = position
-    frame.Size = size
-    frame.BackgroundColor3 = backgroundColor
-    frame.ZIndex = zIndex
-    frame.Active = true
-    frame.Draggable = draggable
-    frame.Visible = true
-    return frame
-end
-
-local MainXE = createFrame("MainXE", dogent, Vector2.new(0.5, 0.5), UDim2.new(0.5, 0, 0.5, 0), UDim2.new(0, 0, 0, 0), MainXEColor, 1, true)  
-
-local screenSize = services.Players.LocalPlayer:GetMouse().ViewSizeX
-MainXE.Size = UDim2.new(0, math.clamp(screenSize * 0.8, 500, 800), 0, math.clamp(screenSize * 0.6, 400, 600))
+G2L["element_12"] = Instance.new("Folder", G2L["ScreenGui_1"]);
+G2L["element_12"]["Name"] = [[element]];
 
 
-local neonBorder = Instance.new("Frame")
-neonBorder.Name = "NeonBorder"
-neonBorder.Parent = MainXE
-neonBorder.BackgroundTransparency = 1
-neonBorder.Size = UDim2.new(1, 10, 1, 10)
-neonBorder.Position = UDim2.new(0, -5, 0, -5)
-neonBorder.ZIndex = 0
-
-local borderGradient = Instance.new("UIGradient")
-borderGradient.Parent = neonBorder
-borderGradient.Rotation = 45
-borderGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 255)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 255))
-})
-
-local borderTween = game:GetService("TweenService"):Create(
-    borderGradient,
-    TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
-    {Rotation = 360}
-)
-borderTween:Play()
-
-local stroke = Instance.new("UIStroke")
-stroke.Parent = MainXE
-stroke.Thickness = 3
-stroke.Color = Color3.fromRGB(0, 255, 255)
-stroke.Transparency = 0.5
-stroke.LineJoinMode = Enum.LineJoinMode.Round
+G2L["buttonsample_13"] = Instance.new("Frame", G2L["element_12"]);
+G2L["buttonsample_13"]["Visible"] = false;
+G2L["buttonsample_13"]["BorderSizePixel"] = 0;
+G2L["buttonsample_13"]["BackgroundColor3"] = Color3.fromRGB(210, 210, 210);
+G2L["buttonsample_13"]["Size"] = UDim2.new(1, 0, 0.18889, 0);
+G2L["buttonsample_13"]["Name"] = [[buttonsample]];
+G2L["buttonsample_13"]["BackgroundTransparency"] = 0.2;
 
 
-local DynamicBG = Instance.new("Frame")
-DynamicBG.Name = "DynamicBG"
-DynamicBG.Parent = MainXE
-DynamicBG.BackgroundColor3 = MainXEColor
-DynamicBG.BackgroundTransparency = 0.7
-DynamicBG.Size = UDim2.new(1, 0, 1, 0)
-DynamicBG.ZIndex = -1  
+G2L["UICorner_14"] = Instance.new("UICorner", G2L["buttonsample_13"]);
+G2L["UICorner_14"]["CornerRadius"] = UDim.new(0.1, 0);
 
-local gridSize = 50
-for y = 0, 1, 1/10 do  
-    local line = Instance.new("Frame")
-    line.Name = "GridLine_H_"..y
-    line.Parent = DynamicBG
-    line.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
-    line.BorderSizePixel = 0
-    line.Size = UDim2.new(1, 0, 0, 1)
-    line.Position = UDim2.new(0, 0, y, 0)
-    line.ZIndex = 0
-end
 
-local scanDot = Instance.new("Frame")
-scanDot.Name = "ScanDot"
-scanDot.Parent = DynamicBG
-scanDot.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-scanDot.Size = UDim2.new(0, 6, 0, 6)
-scanDot.Position = UDim2.new(0, 0, 0, 0)
-scanDot.ZIndex = 2
+G2L["TextButton_15"] = Instance.new("TextButton", G2L["buttonsample_13"]);
+G2L["TextButton_15"]["TextWrapped"] = true;
+G2L["TextButton_15"]["BorderSizePixel"] = 0;
+G2L["TextButton_15"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["TextButton_15"]["TextScaled"] = true;
+G2L["TextButton_15"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["TextButton_15"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["TextButton_15"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["TextButton_15"]["BackgroundTransparency"] = 1;
+G2L["TextButton_15"]["Size"] = UDim2.new(0.41842, 0, 0.75, 0);
+G2L["TextButton_15"]["Text"] = [[Button sample]];
+G2L["TextButton_15"]["Position"] = UDim2.new(0.00526, 0, 0.125, 0);
 
-spawn(function()
-    while true do
-        game:GetService("TweenService"):Create(
-            scanDot,
-            TweenInfo.new(2, Enum.EasingStyle.Linear),
-            {Position = UDim2.new(1, -6, 0, 0)}
-        ):Play()
-        wait(2)
-        game:GetService("TweenService"):Create(
-            scanDot,
-            TweenInfo.new(1, Enum.EasingStyle.Linear),
-            {Position = UDim2.new(1, -6, 1, -6)}
+
+G2L["togglesample_16"] = Instance.new("Frame", G2L["element_12"]);
+G2L["togglesample_16"]["Visible"] = false;
+G2L["togglesample_16"]["BorderSizePixel"] = 0;
+G2L["togglesample_16"]["BackgroundColor3"] = Color3.fromRGB(210, 210, 210);
+G2L["togglesample_16"]["Size"] = UDim2.new(1, 0, 0.18889, 0);
+G2L["togglesample_16"]["Name"] = [[togglesample]];
+G2L["togglesample_16"]["BackgroundTransparency"] = 0.2;
+
+
+G2L["UICorner_17"] = Instance.new("UICorner", G2L["togglesample_16"]);
+G2L["UICorner_17"]["CornerRadius"] = UDim.new(0.1, 0);
+
+
+G2L["TextButton_18"] = Instance.new("TextButton", G2L["togglesample_16"]);
+G2L["TextButton_18"]["TextWrapped"] = true;
+G2L["TextButton_18"]["BorderSizePixel"] = 0;
+G2L["TextButton_18"]["TextXAlignment"] = Enum.TextXAlignment.Left;
+G2L["TextButton_18"]["TextScaled"] = true;
+G2L["TextButton_18"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["TextButton_18"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["TextButton_18"]["FontFace"] = Font.new([[rbxasset://fonts/families/FredokaOne.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["TextButton_18"]["BackgroundTransparency"] = 1;
+G2L["TextButton_18"]["Size"] = UDim2.new(0.41842, 0, 0.75, 0);
+G2L["TextButton_18"]["Text"] = [[toggle]];
+G2L["TextButton_18"]["Position"] = UDim2.new(0.00526, 0, 0.125, 0);
+
+
+G2L["Frame_19"] = Instance.new("Frame", G2L["togglesample_16"]);
+G2L["Frame_19"]["BorderSizePixel"] = 0;
+G2L["Frame_19"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["Frame_19"]["Size"] = UDim2.new(0.13684, 0, 0.875, 0);
+G2L["Frame_19"]["Position"] = UDim2.new(0.85211, 0, 0.0625, 0);
+
+
+G2L["UICorner_1a"] = Instance.new("UICorner", G2L["Frame_19"]);
+G2L["UICorner_1a"]["CornerRadius"] = UDim.new(0.2, 0);
+
+
+local function C_11()
+	local script = G2L["LocalScript_11"];
+	
+	--I have added the explanation
+	local gui = script.Parent	-- Get the GUI the script is a part of
+	local element = gui.element	
+	
+	-- Function to create a new GUI window
+	function create(name)	
+	 local tables = {}	-- Table to hold the functions we will return
+	 local gui = gui:Clone()	-- Clone the GUI template
+	gui.Enabled = true	
+	gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+	gui.Name = name or "error"
+	
+	local frame = gui.main.Frame	
+	frame.bar.title.Text = name or "untitled"	-- Set the window/bar title
+	frame.bar.close.MouseButton1Down:Connect(function()	
+	 gui:Destroy()	-- Destroy the GUI when close button is clicked
+	end)	
+	local page = frame.page.ScrollingFrame	
+	
+	-- Function to add a button to the GUI
+	function tables:addbutton(name, call)	
+	 local button = element.buttonsample:Clone()	-- Clone a button sample
+	button.Parent = page	
+	 button.Visible = true	
+	 button.Name = name or "notitle"	
+	 button.TextButton.Text = name or "error"	
+	 button.TextButton.MouseButton1Down:Connect(function()	
+	 if call then	
+	 pcall(call)	-- Run the function when button is clicked
+	end	
+	end)	
+	 return button	
+	end	
+	
+	-- Function to add a toggle (on/off switch) to the GUI
+	function tables:addtoggle(name, call, bool)	
+	 local toggle = element.togglesample:Clone()	-- Clone a toggle sample
+	 toggle.TextButton.Text = name or ""	
+	 toggle.Visible = true	
+	 toggle.Parent = page
+	
+	local boolean = false	-- Toggle state
+	if bool then	
+	boolean = true
+	if call then
+		call(boolean)
+	end
+	toggle.Frame.BackgroundColor3 = Color3.fromRGB(0,0,0)	-- Set initial toggle color if 'bool' is true
+	end	
+	 
+	toggle.TextButton.MouseButton1Down:Connect(function()	
+	 boolean = not boolean	-- Change toggle state
+	 if call then	
+	 toggle.Frame.BackgroundColor3 = boolean and Color3.fromRGB(0,0,0) or Color3.fromRGB(255, 255, 255) -- Change color based on state
+	 call(boolean)
+	 end	
+	end)	
+	 return toggle	
+	end	
+	
+	 return tables	-- Return the function or I mean method (addbutton, addtoggle) from tables
+	end	
+	
+	-- call the function
+	local main = create("example basics ui library")
+	
+	main:addbutton("this is button", function()
+		print("button clicked")
+	end)
+	
+
+	main:addtoggle("this one is toggle", function(a)
+		 print("toggle", a)
+	end)
+	
+	main:addtoggle("this one is toggle2", function(a)
+		 print("toggle test", a)
+	end)
+
+end;
+task.spawn(C_11);
+
+return G2L["ScreenGui_1"], require;
+n = UDim2.new(1, -6, 1, -6)}
         ):Play()
         wait(1)
         game:GetService("TweenService"):Create(
@@ -3648,3 +3592,4 @@ end)
 
 
 CreateSupportList(name)
+
